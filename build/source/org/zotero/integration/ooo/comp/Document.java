@@ -105,7 +105,6 @@ public class Document {
 	Properties properties;
 	MarkManager mMarkManager;
 	XUndoManager undoManager;
-	int insertTextIntoNote = 0;
 	private Boolean recordChanges = null;
 	
 	private static boolean checkExperimentalMode = true;
@@ -258,14 +257,14 @@ public class Document {
 		return dataImported;
 	}
 	
-	public void insertText(String textString) throws Exception {
+	public void insertText(String textString, int noteType) throws Exception {
 		prepareDocumentForEditing();
 		
 		XTextCursor viewCursor = getSelection();
-		if (insertTextIntoNote > 0 && getRangePosition(viewCursor).equals("SwXBodyText")) {
+		if (noteType > 0 && getRangePosition(viewCursor).equals("SwXBodyText")) {
 			// make footnote or endnote if cursor is in body text and a note style is selected
 			Object note;
-			if(insertTextIntoNote == NOTE_FOOTNOTE) {
+			if(noteType == NOTE_FOOTNOTE) {
 				note = docFactory.createInstance("com.sun.star.text.Footnote");
 			} else {
 				note = docFactory.createInstance("com.sun.star.text.Endnote");
@@ -309,14 +308,35 @@ public class Document {
 			insertDocumentFromURL("private:stream", new PropertyValue[] {filterName, inputStream});
 	}
 	
-	public ArrayList<ReferenceMark> convertPlaceholdersToFields(final ArrayList<String> placeholderIDs, int noteType, String fieldType) throws Exception {
+	public ArrayList<ReferenceMark> convertPlaceholdersToFields(final ArrayList<String> placeholderIDs, Object noteTypesArg, String fieldType) throws Exception {
 		prepareDocumentForEditing();
 		
 		ArrayList<ReferenceMark> marks = new ArrayList<ReferenceMark>();
 		ArrayList<XTextRange> importLinks = getImportLinks(text);
+		ArrayList<Integer> noteTypes = new ArrayList<Integer>();
 		
 		if (placeholderIDs.size() != importLinks.size()) {
 			throw new Exception("convertPlaceholdersToFields: number of placeholders (" + importLinks.size() + ") do not match the number of provided placeholder IDs (" + placeholderIDs.size() + ")");
+		}
+
+		if (noteTypesArg instanceof Number) {
+			int noteType = ((Number) noteTypesArg).intValue();
+			for (int i = 0; i < placeholderIDs.size(); i++) {
+				noteTypes.add(noteType);
+			}
+		} else if (noteTypesArg instanceof ArrayList<?>) {
+			ArrayList<?> noteTypeList = (ArrayList<?>) noteTypesArg;
+			if (noteTypeList.size() != placeholderIDs.size()) {
+				throw new Exception("convertPlaceholdersToFields: number of note types (" + noteTypeList.size() + ") do not match the number of provided placeholder IDs (" + placeholderIDs.size() + ")");
+			}
+			for (Object noteType : noteTypeList) {
+				if (!(noteType instanceof Number)) {
+					throw new Exception("convertPlaceholdersToFields: note types must be integers");
+				}
+				noteTypes.add(((Number) noteType).intValue());
+			}
+		} else {
+			throw new Exception("convertPlaceholdersToFields: noteTypes must be an integer or an array");
 		}
 		
 		// Sort import links by placeholderIDs order (which is just reverse order at the time of development, but
@@ -338,9 +358,10 @@ public class Document {
 		});
 		
 		// Replacing placeholders with fields
-		for (XTextRange xRange : importLinks) {
+		for (int i = 0; i < importLinks.size(); i++) {
+			XTextRange xRange = importLinks.get(i);
 			XTextCursor cursor = xRange.getText().createTextCursorByRange(xRange);
-			marks.add(insertMarkAtRange(fieldType, noteType, cursor, null, null));
+			marks.add(insertMarkAtRange(fieldType, noteTypes.get(i), cursor, null, null));
 		}
 
 		return marks;

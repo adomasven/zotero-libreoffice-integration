@@ -110,10 +110,11 @@ class CommMessage implements CommFrame {
 				document.setBibliographyStyle((Integer) args.get(1), (Integer) args.get(2),
 					(Integer) args.get(3), (Integer) args.get(4), arrayList, (Integer) args.get(6));
 			} else if(command.equals("Document_insertText")) {
-				document.insertText((String) args.get(1));
+				int noteType = args.size() > 2 ? (Integer) args.get(2) : 0;
+				document.insertText((String) args.get(1), noteType);
 			} else if(command.equals("Document_convertPlaceholdersToFields")) {
 				ArrayList<String> placeholderIDs = (ArrayList<String>) args.get(1);
-				return respondWithFields(document.convertPlaceholdersToFields(placeholderIDs, (Integer) args.get(2), (String) args.get(3)), document);
+				return respondWithFields(document.convertPlaceholdersToFields(placeholderIDs, args.get(2), (String) args.get(3)), document);
 			} else if(command.equals("Document_exportDocument")) {
 				document.exportDocument((String) args.get(1), (String) args.get(2));
 			} else if(command.equals("Document_importDocument")) {

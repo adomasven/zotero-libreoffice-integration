@@ -363,14 +363,16 @@ var Document = function(documentID) {
 };
 Document.prototype = {};
 for (let method of ["displayAlert", "activate", "canInsertField", "getDocumentData",
-	"setDocumentData", "setBibliographyStyle", "complete", "exportDocument", "importDocument",
-	"insertText"]) {
+	"setDocumentData", "setBibliographyStyle", "complete", "exportDocument", "importDocument"]) {
 	let methodStable = method;
 	Document.prototype[method] = function() {
 		return Comm.sendCommand("Document_"+methodStable,
 			[this._documentID].concat(Array.prototype.slice.call(arguments)));
 	};
 }
+Document.prototype.insertText = function(html, noteType = 0) {
+	return Comm.sendCommand("Document_insertText", [this._documentID, html, noteType]);
+};
 Document.prototype.cleanup = function() {};
 Document.prototype.cursorInField = function(fieldType) {
 	var retVal = Comm.sendCommand("Document_cursorInField", [this._documentID, fieldType]);
@@ -397,10 +399,10 @@ Document.prototype.getFields = function(fieldType) {
 		);
 	}.bind(this));
 };
-Document.prototype.convertPlaceholdersToFields = function(placeholderIDs, noteType, fieldType) {
+Document.prototype.convertPlaceholdersToFields = function(placeholderIDs, noteTypes, fieldType) {
 	var documentID = this._documentID;
 	return new Zotero.Promise(function(resolve, reject) {
-		Comm.sendCommandAsync("Document_convertPlaceholdersToFields", [this._documentID, placeholderIDs, noteType, fieldType],
+		Comm.sendCommandAsync("Document_convertPlaceholdersToFields", [this._documentID, placeholderIDs, noteTypes, fieldType],
 			function(result) {
 				var fields = [];
 				for (let i = 0; i < result[0].length; i++) {
