@@ -313,30 +313,21 @@ public class Document {
 		
 		ArrayList<ReferenceMark> marks = new ArrayList<ReferenceMark>();
 		ArrayList<XTextRange> importLinks = getImportLinks(text);
-		ArrayList<Integer> noteTypes = new ArrayList<Integer>();
+		ArrayList<Integer> noteTypes;
 		
 		if (placeholderIDs.size() != importLinks.size()) {
 			throw new Exception("convertPlaceholdersToFields: number of placeholders (" + importLinks.size() + ") do not match the number of provided placeholder IDs (" + placeholderIDs.size() + ")");
 		}
 
-		if (noteTypesArg instanceof Number) {
-			int noteType = ((Number) noteTypesArg).intValue();
+		if (noteTypesArg instanceof Integer) {
+			// Backwards compatibility for older Zotero clients that don't support narrative citations
+			int noteType = (Integer) noteTypesArg;
+			noteTypes = new ArrayList<Integer>();
 			for (int i = 0; i < placeholderIDs.size(); i++) {
 				noteTypes.add(noteType);
 			}
-		} else if (noteTypesArg instanceof ArrayList<?>) {
-			ArrayList<?> noteTypeList = (ArrayList<?>) noteTypesArg;
-			if (noteTypeList.size() != placeholderIDs.size()) {
-				throw new Exception("convertPlaceholdersToFields: number of note types (" + noteTypeList.size() + ") do not match the number of provided placeholder IDs (" + placeholderIDs.size() + ")");
-			}
-			for (Object noteType : noteTypeList) {
-				if (!(noteType instanceof Number)) {
-					throw new Exception("convertPlaceholdersToFields: note types must be integers");
-				}
-				noteTypes.add(((Number) noteType).intValue());
-			}
 		} else {
-			throw new Exception("convertPlaceholdersToFields: noteTypes must be an integer or an array");
+			noteTypes = (ArrayList<Integer>) noteTypesArg;
 		}
 		
 		// Sort import links by placeholderIDs order (which is just reverse order at the time of development, but
